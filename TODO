@@ -1,0 +1,23 @@
+Implement sequence tree: Make tree structures starting with each unique item.
+    Nodes have count of instances ending at that node.
+    Nodes include downward links to children (as a dictionary).
+    Nodes include upward link to parent.
+    A list of presently active nodes is kept, and used to update the tree after each new item.
+Document and explain more clearly, what this does, how it works, how it can be used
+    (including with parsed data so we can catalog regex matches, while specific text differs.)
+Make one or more packages
+Add database to store all runs
+    Input sequence, function, settings, result, elapsed time, repo commit, timestamp
+Add state-space exploration to build topographical map of performance
+    Crawl through state-space starting from the obvious minimum time case
+    Fill in contiguous regions below time thresholds
+        Start with pre-planned thresholds
+        Improve to adapt time thresholds based on observations
+    Consider predicting lowest time of not-yet-run combinations and running in that order
+Run competing algorithms on same data sets
+Add visualization tool that can
+    Rotate 3D
+    Slice higher dimensional data
+    Include new data as it is added
+Add website (Jupyter notebook or similar) to display work interactively
+Publish results if they are interesting
