@@ -44,6 +44,10 @@ class Node:
         self.active = True
         self.count = 1
         self.children = {}
+        self.sequence = []
+        if parent and parent.symbol is not None:
+            self.sequence = parent.sequence.copy()
+        self.sequence.append(symbol)
 
     def increment(self):
         self.count = self.count + 1
@@ -60,6 +64,7 @@ class Node:
             if symbol not in self.children:
                 self.children[symbol] = \
                     Node(trie=self.trie, symbol=symbol, remaining_depth=self.remaining_depth - 1, parent=self)
+                self.trie.all_child_nodes.add(self.children[symbol])
                 self.trie.active_nodes.add(self.children[symbol])
             else:
                 self.children[symbol].increment()
@@ -69,6 +74,7 @@ class Node:
             'symbol': self.symbol,
             'active': self.active,
             'count': self.count,
+            'remaining_depth': self.remaining_depth,
             'children': [self.children[symbol].structure() for symbol in self.children.keys()]
         }}
 
@@ -82,17 +88,22 @@ class Trie:
         self.max_length = max_length
         #
         self.root = Node(trie=self, symbol=None, remaining_depth=max_length, parent=None)
+        self.all_child_nodes = set()
         self.active_nodes = {self.root}  # root is always active
 
     def update(self, symbol):
         # Advance all active nodes with this symbol
+        # TODO: Refactor update to flow down trie, so nodes are handled in order, to maintain control over active state.
         for node in self.active_nodes.copy():
             node.update(symbol)
 
     @property
     def sequences(self) -> Counter:
         sequences = Counter()
-        # TODO: Count sequences
+        for node in self.all_child_nodes:
+            print("{}: count: {}, remaining_depth: {}".format(str(node.sequence), node.count, node.remaining_depth))
+            if node.count > 1 and node.remaining_depth < self.max_length - self.min_length + 1:  # At least min_length
+                sequences[str(node.sequence)] = node.count
         return sequences
 
     def __str__(self):
@@ -104,10 +115,17 @@ class Trie:
 
 if __name__ == '__main__':
     my_trie = Trie(2, 4)
+    my_trie.update('0')
+    my_trie.update('0')
+    my_trie.update('0')
+    my_trie.update('0')
     print(my_trie)
-    print("Updating with 1")
-    my_trie.update(1)
-    print(my_trie)
-    print("Updating with 2")
-    my_trie.update(2)
-    print(my_trie)
+    print(my_trie.sequences)
+
+# Expected Result:
+# ['0', '0', '0']: count: 2, remaining_depth: 1
+    # Miscounting this one as 1, not 2 due to lack of ordered flow of update through nodes.
+# ['0']: count: 4, remaining_depth: 3
+# ['0', '0', '0', '0']: count: 1, remaining_depth: 0
+# ['0', '0']: count: 3, remaining_depth: 2
+# Counter({"['0', '0']": 3, "['0', '0', '0']": 2})
