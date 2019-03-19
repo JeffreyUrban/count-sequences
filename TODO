@@ -21,3 +21,4 @@ Add visualization tool that can
     Include new data as it is added
 Add website (Jupyter notebook or similar) to display work interactively
 Publish results if they are interesting
+Refactor using generator methods
