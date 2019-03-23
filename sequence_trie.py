@@ -1,9 +1,7 @@
-from collections import Counter, deque
+from collections import Counter
 import json
 
-# TODO: Consider making structure recursive instead of Trie and nodes?
-# TODO: Try to do this by inheriting from collections.Counter
-# TODO: Consider indexing all nodes, so reporting sequences is faster.
+# TODO: Index all active nodes within deque (or move to other structure), so updating is faster.
 
 """
 Sequence Trie:
@@ -41,7 +39,6 @@ class Node:
         self.remaining_depth = remaining_depth
         self.parent = parent
         #
-        self.active = True
         self.count = 1
         self.children = {}
         self.sequence = []
@@ -51,25 +48,22 @@ class Node:
 
     def increment(self):
         self.count = self.count + 1
-        self.active = True
+        self.trie.next_active_children_by_level[self.remaining_depth].add(self)
 
     def update(self, symbol):
         # Add or update child with symbol, if depth not exceeded
-        if self.active:
-            if self.symbol is not None:  # Root is defined by no symbol, is always active.
-                self.active = False
-            if self.remaining_depth:
-                if symbol not in self.children:
-                    self.children[symbol] = \
-                        Node(trie=self.trie, symbol=symbol, remaining_depth=self.remaining_depth - 1, parent=self)
-                    self.trie.all_child_nodes.appendleft(self.children[symbol])
-                else:
-                    self.children[symbol].increment()
+        if self.remaining_depth:
+            if symbol not in self.children:
+                self.children[symbol] = \
+                    Node(trie=self.trie, symbol=symbol, remaining_depth=self.remaining_depth - 1, parent=self)
+                self.trie.all_child_nodes.add(self.children[symbol])
+                self.trie.next_active_children_by_level[self.remaining_depth - 1].add(self.children[symbol])
+            else:
+                self.children[symbol].increment()
 
     def structure(self):
         return {'Node': {
             'symbol': self.symbol,
-            'active': self.active,
             'count': self.count,
             'remaining_depth': self.remaining_depth,
             'children': [self.children[symbol].structure() for symbol in self.children.keys()]
@@ -85,15 +79,21 @@ class Trie:
         self.max_length = max_length
         #
         self.root = Node(trie=self, symbol=None, remaining_depth=max_length, parent=None)
-        self.all_child_nodes = deque()  # Children precede parents, for update to flow up table
-        # deque supports more efficient front append. We read in order for every update.
+        # active children are grouped by level for update to flow from leaves to root
+        self.present_active_children_by_level = [set() for _ in range(max_length)]
+        self.next_active_children_by_level = [set() for _ in range(max_length)]
+        self.all_child_nodes = set()
 
     def update(self, symbol):
         # Advance all active nodes with this symbol
         # Update flows up trie (children before parents)
-        for node in self.all_child_nodes.copy():
-            node.update(symbol)
+        self.next_active_children_by_level = [set() for _ in range(self.max_length)]
+        for level in self.present_active_children_by_level:
+            for node in level:
+                node.update(symbol)
         self.root.update(symbol)
+        for level in range(self.max_length):
+            self.present_active_children_by_level[level] = self.next_active_children_by_level[level]
 
     @property
     def sequences(self) -> Counter:

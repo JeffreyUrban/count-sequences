@@ -19,7 +19,7 @@ times = np.zeros((11, 11), float)
 for i in range(1, 11):
     for j in range(1, 11):
         count = i
-        length = j*20
+        length = j*100
         print("count: {}, length: {}".format(count, length))
         times[i, j] = timed_run(
             function="iterate_and_count",
