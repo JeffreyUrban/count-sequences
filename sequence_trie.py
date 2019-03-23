@@ -52,22 +52,21 @@ class Node:
     def increment(self):
         self.count = self.count + 1
         self.active = True
-        self.trie.active_nodes.add(self)
 
     def update(self, symbol):
         # Add or update child with symbol, if depth not exceeded
-        # self.children.update(symbol)
-        if self.symbol is not None:  # Root is defined by no symbol, is always active.
-            self.active = False
-            self.trie.active_nodes.remove(self)
-        if self.remaining_depth:
-            if symbol not in self.children:
-                self.children[symbol] = \
-                    Node(trie=self.trie, symbol=symbol, remaining_depth=self.remaining_depth - 1, parent=self)
-                self.trie.all_child_nodes.add(self.children[symbol])
-                self.trie.active_nodes.add(self.children[symbol])
-            else:
-                self.children[symbol].increment()
+        for child in self.children.values():
+            child.update(symbol)
+        if self.active:
+            if self.symbol is not None:  # Root is defined by no symbol, is always active.
+                self.active = False
+            if self.remaining_depth:
+                if symbol not in self.children:
+                    self.children[symbol] = \
+                        Node(trie=self.trie, symbol=symbol, remaining_depth=self.remaining_depth - 1, parent=self)
+                    self.trie.all_child_nodes.add(self.children[symbol])
+                else:
+                    self.children[symbol].increment()
 
     def structure(self):
         return {'Node': {
@@ -89,13 +88,11 @@ class Trie:
         #
         self.root = Node(trie=self, symbol=None, remaining_depth=max_length, parent=None)
         self.all_child_nodes = set()
-        self.active_nodes = {self.root}  # root is always active
 
     def update(self, symbol):
         # Advance all active nodes with this symbol
-        # TODO: Refactor update to flow down trie, so nodes are handled in order, to maintain control over active state.
-        for node in self.active_nodes.copy():
-            node.update(symbol)
+        # Update flows up trie (children before parents)
+        self.root.update(symbol)
 
     @property
     def sequences(self) -> Counter:

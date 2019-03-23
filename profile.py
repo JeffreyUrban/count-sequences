@@ -21,7 +21,7 @@ for i in range(1, 11):
         count = i
         length = j*10
         times[i, j] = timed_run(
-            function="iterate_and_count",
+            function="iterate_and_count_using_sequence_trie",
             count=count,
             length=length,
             min_sequence_length=2,

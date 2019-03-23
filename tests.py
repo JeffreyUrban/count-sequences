@@ -6,8 +6,8 @@ from iterate_and_count_using_sequence_trie import iterate_and_count_using_sequen
 
 
 def test_output_is_consistent():
-    unique_count = 3
-    list_length = 6
+    unique_count = 10
+    list_length = 100
 
     input_list = random_list(count=unique_count, length=list_length)
     print("Input list: " + str(input_list))
