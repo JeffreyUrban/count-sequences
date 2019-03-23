@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, deque
 import json
 
 # TODO: Consider making structure recursive instead of Trie and nodes?
@@ -55,8 +55,6 @@ class Node:
 
     def update(self, symbol):
         # Add or update child with symbol, if depth not exceeded
-        for child in self.children.values():
-            child.update(symbol)
         if self.active:
             if self.symbol is not None:  # Root is defined by no symbol, is always active.
                 self.active = False
@@ -64,7 +62,7 @@ class Node:
                 if symbol not in self.children:
                     self.children[symbol] = \
                         Node(trie=self.trie, symbol=symbol, remaining_depth=self.remaining_depth - 1, parent=self)
-                    self.trie.all_child_nodes.add(self.children[symbol])
+                    self.trie.all_child_nodes.appendleft(self.children[symbol])
                 else:
                     self.children[symbol].increment()
 
@@ -87,18 +85,20 @@ class Trie:
         self.max_length = max_length
         #
         self.root = Node(trie=self, symbol=None, remaining_depth=max_length, parent=None)
-        self.all_child_nodes = set()
+        self.all_child_nodes = deque()  # Children precede parents, for update to flow up table
+        # deque supports more efficient front append. We read in order for every update.
 
     def update(self, symbol):
         # Advance all active nodes with this symbol
         # Update flows up trie (children before parents)
+        for node in self.all_child_nodes.copy():
+            node.update(symbol)
         self.root.update(symbol)
 
     @property
     def sequences(self) -> Counter:
         sequences = Counter()
         for node in self.all_child_nodes:
-            print("{}: count: {}, remaining_depth: {}".format(str(node.sequence), node.count, node.remaining_depth))
             if node.count > 1 and node.remaining_depth < self.max_length - self.min_length + 1:  # At least min_length
                 sequences[str(node.sequence)] = node.count
         return sequences
@@ -121,7 +121,6 @@ if __name__ == '__main__':
 
 # Expected Result:
 # ['0', '0', '0']: count: 2, remaining_depth: 1
-    # Miscounting this one as 1, not 2 due to lack of ordered flow of update through nodes.
 # ['0']: count: 4, remaining_depth: 3
 # ['0', '0', '0', '0']: count: 1, remaining_depth: 0
 # ['0', '0']: count: 3, remaining_depth: 2

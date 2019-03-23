@@ -19,9 +19,10 @@ times = np.zeros((11, 11), float)
 for i in range(1, 11):
     for j in range(1, 11):
         count = i
-        length = j*10
+        length = j*20
+        print("count: {}, length: {}".format(count, length))
         times[i, j] = timed_run(
-            function="iterate_and_count_using_sequence_trie",
+            function="iterate_and_count",
             count=count,
             length=length,
             min_sequence_length=2,
